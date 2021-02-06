@@ -15,10 +15,10 @@ jobs:
         flutter-version: '1.22.6'
     - run: flutter pub get
     - run: flutter build apk
-    - uses: actions/cache@v2
-      with:
-        path: build
-        key: build-${{ github.sha }}
+    - uses: actions/upload-artifact@v2
+        with:
+          name: build-android
+          path: build/*
   ios:
     runs-on: macos-latest
     steps:
@@ -31,7 +31,7 @@ jobs:
         flutter-version: '1.22.6'
     - run: flutter pub get
     - run: flutter build ios --release --no-codesign
-    - uses: actions/cache@v2
-      with:
-        path: build
-        key: build-${{ github.sha }}
+    - uses: actions/upload-artifact@v2
+        with:
+          name: build-ios
+          path: build/*

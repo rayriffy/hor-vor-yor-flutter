@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:horvoryor/Result.dart';
 import 'package:niku/niku.dart';
 import 'package:tailwind_colors/tailwind_colors.dart';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 import 'LotteryResult.dart';
 
@@ -35,6 +36,68 @@ class PageWithState extends State<Page> {
   final controller = TextEditingController();
   FocusNode focusNode;
 
+  bool _inProgress = false;
+  bool _hasError = false;
+  String _errorMessage = '';
+
+  void onPress () async {
+    if (_inProgress == true) {
+      return;
+    }
+
+    // reset state
+    setState(() {
+      _inProgress = true;
+      _hasError = false;
+      _errorMessage = '';
+    });
+
+    try {
+      var response = await Dio().post(
+        'https://horvoryor.api.rayriffy.com/api/check',
+        options: Options(
+          method: 'POST'
+        ),
+        data: {
+          'lotteryNumber': controller.text
+        }
+      );
+
+      LotteryResult lotteryResult = LotteryResult.fromJson(response.data);
+
+      setState(() {
+        _inProgress = false;
+        _hasError = false;
+      });
+
+      // func
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Result(lotteryResult: lotteryResult))
+      );
+    } on DioError catch (error) {
+      try {
+        if (error.response.data['data']['message'] == 'invalid-input') {
+          setState(() {
+            _errorMessage = 'กรุณากรอกเพียงตัวเลขสลากกินแบ่ง 6 หลักเท่านั้น';
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'ไม่สามารถตรวจผลสลากกินแบ่งได้ในตอนนี้';
+        });
+      } finally {
+        setState(() {
+          _hasError = true;
+        });
+      }
+    } finally {
+      setState(() {
+        _inProgress = false;
+      });
+    }
+  }
+
   // init focus on mount
   @override
   void initState() {
@@ -60,6 +123,7 @@ class PageWithState extends State<Page> {
         NikuTextField("")
           .textEditingController(controller)
           .focusNode(focusNode)
+          .enabled(!_inProgress)
           .outlined(borderRadius: BorderRadius.circular(6.0))
           .shadows([
             Shadow(
@@ -68,15 +132,22 @@ class PageWithState extends State<Page> {
               color: Colors.black.withOpacity(.1),
             )
           ])
-          .my(18)
+          .mt(18)
           .mx(36),
-        NikuButton(NikuText('ตรวจแล้วรวย!').color(Colors.white)).bg(TWColors.blue.shade600).px(24).py(16).onPressed(() {
-          // func
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => Result(lotteryResult: LotteryResult('123', '123', '123')))
-          );
-        }),
+        _hasError ? NikuText(_errorMessage).color(TWColors.red.shade500).mt(12) : Niku(),
+        NikuButton(
+          NikuText(_inProgress ? 'จะได้หรือจะโดนกิน???' : 'ตรวจผลเลย!')
+            .fontSize(14)
+            .fontFamily('Niramit')
+            .fontSize(14)
+            .color(Colors.white)
+        )
+          .onPressed(onPress)
+          .bg(_inProgress ? TWColors.blue.shade600 : TWColors.blue.shade700)
+          .px(22)
+          .py(10)
+          .niku()
+          .mt(12),
       ]).mainCenter().mainStart().niku().pt(120)
     ).niku().on(tap: () {
       focusNode.unfocus();

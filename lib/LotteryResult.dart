@@ -42,7 +42,7 @@ class LotteryResult {
 
   String printDetailedResult() {
     if (this.lotteryResult == 'none') {
-      return 'asdasd';
+      return 'สลากกินแบ่งหมายเลข ${this.lotteryNumber} ไม่ได้รับนางวัลใดในรอบสลากกินแบ่งวันที่ ${this.lotterDateCycle}';
     } else {
       return 'สลากกินแบ่งหมายเลข ${this.lotteryNumber} ได้รับ' + getRewardType(this.lotteryResult) + 'ในรอบสลากกินแบ่งวันที่ ${this.lotterDateCycle}';
     }
